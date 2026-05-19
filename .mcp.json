@@ -4,14 +4,14 @@
       "type": "http",
       "url": "https://vishalmishra.app.n8n.cloud/mcp-server/http",
       "headers": {
-        "Authorization": "Bearer ${N8N_MCP_TOKEN}"
+        "X-N8N-API-KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0MWM4ZjJiZi0yYWEzLTRhYjgtOGYzYi1mODI2ZmQzZjcwNDYiLCJpc3MiOiJuOG4iLCJhdWQiOiJtY3Atc2VydmVyLWFwaSIsImp0aSI6IjYxYzQ2OTUwLWU0MjktNDdkYS04MTY1LTQyMjg5YWEyNmZjNiIsImlhdCI6MTc3OTE3ODIwMX0.I4xk7iZq9D8cHml72ik4kQDhq6rERf4Ybp21a00R5-U"
       }
     },
     "github": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-github"],
-      "env": {
-        "GITHUB_TOKEN": "${GITHUB_TOKEN}"
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp",
+      "headers": {
+        "Authorization": "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"
       }
     }
   }
