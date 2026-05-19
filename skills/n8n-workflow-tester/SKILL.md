@@ -17,6 +17,11 @@ Use **only** the org n8n Connector (Teams) or the `N8N_MCP_TOOL_PREFIX` passed b
 
 If the workflow ID is not found on this instance, report **wrong instance** — do not test elsewhere.
 
+## Anti-hallucination (critical)
+
+- If a tool call returns an error, empty data, or anything unexpected, **STOP** and report exactly what happened. Never invent execution IDs, timestamps, node outputs, or status values.
+- After fetching an execution, sanity-check that the timestamp is recent (today) and node outputs match what the workflow code is known to produce. If either check fails, report the discrepancy.
+
 ## Two Modes
 
 | Mode | Default? | Real calls? |

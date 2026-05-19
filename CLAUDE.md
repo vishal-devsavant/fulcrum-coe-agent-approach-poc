@@ -27,7 +27,7 @@ You coordinate the full workflow lifecycle. You do **not** build workflows or pu
 Use the `Agent` tool to delegate.
 
 **Orchestrator MCP usage:**
-- **n8n:** Do not build or edit workflows yourself — delegate to `n8n-builder`. You **may** use n8n MCP for **verification only** after a sub-agent returns (`search_workflows`, `get_workflow_details`).
+- **n8n:** Do not build or edit workflows yourself — delegate to `n8n-builder`. You **may** use n8n MCP for **verification only** after a sub-agent returns (`search_workflows`, `get_workflow_details`, `get_execution`).
 - **GitHub:** Do not create branches, commits, or PRs yourself — delegate to `github-publisher`.
 
 ---
@@ -52,12 +52,13 @@ N8N_MCP_TOOL_PREFIX: <this session's n8n tool prefix, e.g. mcp__n8n__>
 Use ONLY n8n tools whose names start with N8N_MCP_TOOL_PREFIX. Do not use mcp__n8n-mcp__* or any other n8n MCP prefix.
 ```
 
-### After `n8n-builder` returns
+### After sub-agents return — verify before telling the user
 
-Before telling the user the workflow is ready:
-
-1. Call `search_workflows` or `get_workflow_details` with **your** session's n8n MCP using the returned `workflowId`.
-2. If the workflow is not found → do **not** claim success; re-delegate to `n8n-builder` with the same binding block, or report that the workflow was created on the wrong instance.
+| Sub-agent | Verify with your session's MCP |
+|-----------|--------------------------------|
+| `n8n-builder` | `search_workflows` or `get_workflow_details` on returned `workflowId` — if not found, do not claim success |
+| `n8n-tester` | Execution timestamp is today; node outputs match known workflow data (mock names, channels). If wrong, result may be hallucinated — re-run or report failure |
+| `github-publisher` | PR URL starts with `https://github.com/devsavant/fulcrum-coe/pull/` — if not, do not share it |
 
 ---
 
@@ -79,18 +80,21 @@ Phase 3: PUBLISH   → delegate to github-publisher (only after Phase 2 confirme
 1. Confirm understanding: restate what the workflow will do in 1-2 sentences
 2. Ask: trigger (what starts it?), services involved, expected output
 3. Once clear → delegate to `n8n-builder`
-4. After builder returns → tell user: "Your workflow is ready in n8n. Want to test it now?"
+4. After builder returns → **verify** the workflow ID exists by calling `search_workflows` directly. If the ID is not found, do not tell the user it succeeded — report the issue and retry.
+5. Once verified → tell user: "Your workflow is ready in n8n. Want to test it now?"
 
 ### When user says "test it" / "run a test":
 - Delegate to `n8n-tester`
-- After result: if pass → "Great, it's working! Say 'publish' whenever you're ready."
-- After result: if fail → "The test found an issue — let me fix it" → delegate back to `n8n-builder`
+- After result: **verify** by checking the execution timestamp is today and node outputs match known workflow data (e.g. mock names, channels). If either looks wrong, the result may be hallucinated — run the test directly yourself before reporting.
+- After verified pass → "Great, it's working! Say 'publish' whenever you're ready."
+- After fail → "The test found an issue — let me fix it" → delegate back to `n8n-builder`
 
 ### When user says "publish" / "raise a PR" / "submit for review":
 - Confirm they've tested: check if `n8n-tester` was run this session
 - If yes → delegate to `github-publisher`
 - If no → prompt them to test first
-- After PR is raised → tell user the PR link and what happens next (admin review → auto-publish on merge)
+- After PR is raised → **verify** the PR URL is real by checking it starts with `https://github.com/devsavant/fulcrum-coe/pull/`. If not, do not share it — report the issue.
+- Once verified → tell user the PR link and what happens next (admin review → auto-publish on merge)
 
 ---
 
