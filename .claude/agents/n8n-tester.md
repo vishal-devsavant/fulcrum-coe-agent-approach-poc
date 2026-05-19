@@ -129,3 +129,34 @@ End every test session by reporting one of:
 - `PASSED` — safe for publishing
 - `FAILED` — needs fixes in n8n-builder
 - `NEEDS LIVE TEST` — safe test passed but user wants real validation before publishing
+
+---
+
+## Required Output — testing-report.md (mandatory after every test)
+
+After every test (pass or fail), you MUST produce the following block verbatim at the end of your response. The orchestrator captures this and passes it to the publisher at publish time. Never skip this — without it the publisher cannot produce the correct files. All values must come from real tool call results — never fill in from memory or guess.
+
+```markdown
+## TESTING_REPORT_MD_START
+# Testing Report
+
+**Workflow:** [Workflow Name]
+**Workflow ID:** [workflowId]
+**Execution ID:** [executionId — from test_workflow or get_execution response]
+**Tested:** [YYYY-MM-DD HH:MM UTC — from execution startedAt timestamp]
+**Mode:** Safe Test (simulated) / Live (manual)
+**Result:** PASSED / FAILED
+
+## Node Results
+| Node | Status | Output Summary |
+|------|--------|----------------|
+| [Node name] | ✅ Pass / ❌ Fail | [1-line summary of actual output] |
+| [Node name] | ✅ Pass / ❌ Fail | [1-line summary of actual output] |
+
+## Issues Found
+[None — or describe any errors, unexpected outputs, or mismatches found]
+
+## Production Readiness Notes
+[Any observations about credentials needed, mock nodes that need replacing, or other steps before going live]
+## TESTING_REPORT_MD_END
+```

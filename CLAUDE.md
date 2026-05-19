@@ -40,26 +40,47 @@ Phase 3: PUBLISH   → delegate to github-publisher (only after Phase 2 confirme
 
 ---
 
+## Artifact Tracking — Orchestrator Responsibility
+
+You must capture and hold two artifacts across the lifecycle. These are passed to the publisher at publish time:
+
+| Artifact | Produced by | How to capture |
+|----------|-------------|----------------|
+| `context.md` | `n8n-builder` | Extract content between `CONTEXT_MD_START` and `CONTEXT_MD_END` in the builder's response |
+| `testing-report.md` | `n8n-tester` | Extract content between `TESTING_REPORT_MD_START` and `TESTING_REPORT_MD_END` in the tester's response |
+
+**If either artifact is missing when the user says publish → do not proceed.** Tell the user: "I need to re-run the build/test step to capture the required files before publishing."
+
+---
+
 ## Conversation Flow
 
 ### When user describes an automation idea:
 1. Confirm understanding: restate what the workflow will do in 1-2 sentences
 2. Ask: trigger (what starts it?), services involved, expected output
 3. Once clear → delegate to `n8n-builder`
-4. After builder returns → **verify** the workflow ID exists by calling `search_workflows` directly. If the ID is not found, do not tell the user it succeeded — report the issue and retry.
+4. After builder returns:
+   - **Capture** the `context.md` block (between `CONTEXT_MD_START` / `CONTEXT_MD_END`) and hold it in session
+   - **Verify** the workflow ID exists via `search_workflows` directly. If not found → report the issue and retry
 5. Once verified → tell user: "Your workflow is ready in n8n. Want to test it now?"
 
 ### When user says "test it" / "run a test":
 - Delegate to `n8n-tester`
-- After result: **verify** by checking the execution timestamp is today and node outputs match known workflow data (e.g. mock names, channels). If either looks wrong, the result may be hallucinated — run the test directly yourself before reporting.
+- After tester returns:
+  - **Capture** the `testing-report.md` block (between `TESTING_REPORT_MD_START` / `TESTING_REPORT_MD_END`) and hold it in session
+  - **Verify** execution timestamp is today and node outputs match known workflow data. If wrong → result may be hallucinated — run the test directly yourself before reporting
 - After verified pass → "Great, it's working! Say 'publish' whenever you're ready."
 - After fail → "The test found an issue — let me fix it" → delegate back to `n8n-builder`
 
 ### When user says "publish" / "raise a PR" / "submit for review":
-- Confirm they've tested: check if `n8n-tester` was run this session
-- If yes → delegate to `github-publisher`
-- If no → prompt them to test first
-- After PR is raised → **verify** the PR URL is real by checking it starts with `https://github.com/devsavant/fulcrum-coe/pull/`. If not, do not share it — report the issue.
+- Confirm both artifacts are held in session (context.md + testing-report.md). If either is missing → re-run the relevant phase first
+- Confirm testing passed this session
+- Delegate to `github-publisher`, passing the following explicitly in the prompt:
+  - Workflow name, ID, and n8n instance
+  - N8N_MCP_TOOL_PREFIX for this session
+  - Full content of captured `context.md`
+  - Full content of captured `testing-report.md`
+- After PR is raised → **verify** the PR URL starts with `https://github.com/vishal-devsavant/fulcrum-coe-agent-approach-poc/pull/`. If not → do not share it, report the issue
 - Once verified → tell user the PR link and what happens next (admin review → auto-publish on merge)
 
 ---
@@ -77,7 +98,7 @@ Phase 3: PUBLISH   → delegate to github-publisher (only after Phase 2 confirme
 
 - **n8n instance:** `vishalmishra.app.n8n.cloud`
 - **Default project ID:** `f256nwX37BEaIkA2`
-- **GitHub repo:** `devsavant/fulcrum-coe` (workflows live in `/workflows/`)
+- **GitHub repo:** `vishal-devsavant/fulcrum-coe-agent-approach-poc` (workflows live in `/workflows/<kebab-name>/`)
 - **Workflow naming convention:** `[Category] - [Action] - [Destination]`
   - Examples: `CRM - Sync Leads - Snowflake`, `Notifications - Slack Alert - On Error`
 
