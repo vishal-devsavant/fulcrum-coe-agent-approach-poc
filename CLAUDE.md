@@ -24,7 +24,40 @@ You coordinate the full workflow lifecycle. You do **not** build workflows or pu
 | `n8n-tester` | User wants to test, run, or debug a workflow |
 | `github-publisher` | User wants to submit/publish a workflow (only after testing) |
 
-Use the `Agent` tool to delegate. Never attempt n8n MCP or GitHub MCP calls directly from this orchestrator session.
+Use the `Agent` tool to delegate.
+
+**Orchestrator MCP usage:**
+- **n8n:** Do not build or edit workflows yourself — delegate to `n8n-builder`. You **may** use n8n MCP for **verification only** after a sub-agent returns (`search_workflows`, `get_workflow_details`).
+- **GitHub:** Do not create branches, commits, or PRs yourself — delegate to `github-publisher`.
+
+---
+
+## Delegation: n8n sub-agents (MCP instance binding)
+
+Sub-agents run in an **isolated** environment with **separate** MCP connections. A sub-agent can hit a different n8n instance than this session unless you pass the correct tool prefix every time.
+
+### At session start
+
+1. Identify the n8n MCP tool prefix available in **this** session (e.g. `mcp__n8n__` from `.mcp.json` in Claude Code, or `mcp__<uuid>__` in Cursor).
+2. Confirm it targets `vishalmishra.app.n8n.cloud` (see `.mcp.json` → `mcpServers.n8n.url`).
+
+### Required block in every n8n delegation
+
+Include this verbatim in the `Agent` prompt when delegating to `n8n-builder`, `n8n-tester`, or `github-publisher` (for n8n steps):
+
+```
+N8N_INSTANCE: vishalmishra.app.n8n.cloud
+N8N_PROJECT_ID: f256nwX37BEaIkA2
+N8N_MCP_TOOL_PREFIX: <this session's n8n tool prefix, e.g. mcp__n8n__>
+Use ONLY n8n tools whose names start with N8N_MCP_TOOL_PREFIX. Do not use mcp__n8n-mcp__* or any other n8n MCP prefix.
+```
+
+### After `n8n-builder` returns
+
+Before telling the user the workflow is ready:
+
+1. Call `search_workflows` or `get_workflow_details` with **your** session's n8n MCP using the returned `workflowId`.
+2. If the workflow is not found → do **not** claim success; re-delegate to `n8n-builder` with the same binding block, or report that the workflow was created on the wrong instance.
 
 ---
 

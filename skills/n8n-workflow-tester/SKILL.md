@@ -9,7 +9,13 @@ description: >
 
 # n8n Workflow Tester
 
-Safe, structured workflow testing from within Claude chat.
+Safe, structured workflow testing from within Claude chat on `vishalmishra.app.n8n.cloud`.
+
+## MCP instance binding
+
+Use **only** the org n8n Connector (Teams) or the `N8N_MCP_TOOL_PREFIX` passed by the orchestrator (Claude Code). Do not use a different n8n MCP tool family.
+
+If the workflow ID is not found on this instance, report **wrong instance** — do not test elsewhere.
 
 ## Two Modes
 

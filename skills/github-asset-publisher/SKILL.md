@@ -11,6 +11,11 @@ description: >
 
 Handles workflow submission: n8n draft → GitHub PR → Admin review → Auto-publish on merge.
 
+## MCP instance binding
+
+- **n8n reads:** org n8n Connector or orchestrator-provided `N8N_MCP_TOOL_PREFIX` only — instance `vishalmishra.app.n8n.cloud`. Never use another n8n MCP prefix.
+- **GitHub:** org GitHub Connector only — repo `devsavant/fulcrum-coe`.
+
 ## Pre-Flight (Always Check First)
 ```
 1. Workflow exists: search_workflows(query)

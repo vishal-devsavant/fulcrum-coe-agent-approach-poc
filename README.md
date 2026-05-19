@@ -132,6 +132,8 @@ Or set them in your shell before opening Claude Desktop.
 | n8n | Create, validate, test workflows | `https://vishalmishra.app.n8n.cloud/mcp-server/http` |
 | GitHub | Create branches, commit files, open PRs | `npx @modelcontextprotocol/server-github` |
 
+**Sub-agents and MCP:** Delegated agents do not inherit the parent session's MCP connection. The orchestrator (`CLAUDE.md`) must pass `N8N_MCP_TOOL_PREFIX` on every n8n delegation and verify returned workflow IDs on the parent instance before telling the user a workflow is ready.
+
 ---
 
 ## Sync to Teams Project — Admin Checklist
