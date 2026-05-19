@@ -1,0 +1,64 @@
+name: Publish n8n Workflow on PR Merge
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+    paths:
+      - 'workflows/**'
+
+jobs:
+  publish-workflow:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    name: Activate workflow in n8n
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract workflow ID from PR body
+        id: extract
+        run: |
+          PR_BODY="${{ github.event.pull_request.body }}"
+          WORKFLOW_ID=$(echo "$PR_BODY" | grep -oP '(?<=\*\*n8n Workflow ID:\*\* )[\w-]+')
+          echo "workflow_id=$WORKFLOW_ID" >> $GITHUB_OUTPUT
+          echo "Extracted workflow ID: $WORKFLOW_ID"
+
+      - name: Activate workflow in n8n
+        if: steps.extract.outputs.workflow_id != ''
+        run: |
+          WORKFLOW_ID="${{ steps.extract.outputs.workflow_id }}"
+          echo "Activating workflow: $WORKFLOW_ID"
+          
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
+            -X POST \
+            -H "X-N8N-API-KEY: ${{ secrets.N8N_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            "https://vishalmishra.app.n8n.cloud/api/v1/workflows/$WORKFLOW_ID/activate")
+          
+          if [ "$RESPONSE" = "200" ]; then
+            echo "✅ Workflow $WORKFLOW_ID activated successfully"
+          else
+            echo "❌ Failed to activate workflow. HTTP status: $RESPONSE"
+            exit 1
+          fi
+
+      - name: Comment on PR with publish status
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const workflowId = '${{ steps.extract.outputs.workflow_id }}';
+            const success = '${{ job.status }}' === 'success';
+            const body = success
+              ? `✅ **Workflow published to n8n**\n\nWorkflow ID \`${workflowId}\` is now live at [vishalmishra.app.n8n.cloud](https://vishalmishra.app.n8n.cloud).`
+              : `❌ **Publish failed**\n\nCould not activate workflow ID \`${workflowId}\`. Check the [Actions log](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details.`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body
+            });

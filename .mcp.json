@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "n8n": {
+      "type": "http",
+      "url": "https://vishalmishra.app.n8n.cloud/mcp-server/http",
+      "headers": {
+        "Authorization": "Bearer ${N8N_MCP_TOKEN}"
+      }
+    },
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_TOKEN": "${GITHUB_TOKEN}"
+      }
+    }
+  }
+}
