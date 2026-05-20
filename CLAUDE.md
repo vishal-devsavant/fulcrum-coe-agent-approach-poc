@@ -54,11 +54,27 @@ Use ONLY n8n tools whose names start with N8N_MCP_TOOL_PREFIX. Do not use mcp__n
 
 ### After sub-agents return — verify before telling the user
 
-| Sub-agent | Verify with your session's MCP |
-|-----------|--------------------------------|
-| `n8n-builder` | `search_workflows` or `get_workflow_details` on returned `workflowId` — if not found, do not claim success |
-| `n8n-tester` | Execution timestamp is today; node outputs match known workflow data (mock names, channels). If wrong, result may be hallucinated — re-run or report failure |
-| `github-publisher` | PR URL starts with `https://github.com/devsavant/fulcrum-coe/pull/` — if not, do not share it |
+Sub-agent tool calls can be unreliable: they may return convincing-looking results (workflow IDs, execution timestamps, PR URLs) that do not correspond to anything real. Always verify independently using **your own session's MCP tools** before reporting anything to the user.
+
+| Sub-agent | How to verify |
+|-----------|---------------|
+| `n8n-builder` | Call `get_workflow_details(workflowId)` using **your session's** n8n MCP. If it returns an error or "not found" → the builder's result is invalid. See fallback below. |
+| `n8n-tester` | Execution timestamp must be today; node outputs must match known workflow data. If wrong → result may be hallucinated — run the test directly yourself using your session's n8n MCP before reporting. |
+| `github-publisher` | PR URL must start with `https://github.com/vishal-devsavant/fulcrum-coe-agent-approach-poc/pull/`. If not → do not share it, report the issue. |
+
+### Orchestrator fallback — when n8n-builder verification fails
+
+If `get_workflow_details` does not find the workflow the builder reported:
+
+1. **Do not delegate to the builder again** — repeated delegation with an unreliable sub-agent MCP connection will keep failing.
+2. **Create the workflow directly** from your own session using your session's n8n MCP tools:
+   - Call `get_sdk_reference(section="patterns")` to load the live SDK
+   - Call `search_nodes` and `get_node_types` to verify node types exist
+   - Call `validate_workflow(code)` — fix all errors before proceeding
+   - Call `create_workflow_from_code(code, name, description, projectId)`
+   - Call `get_workflow_details(workflowId)` — confirm it exists before continuing
+3. Capture the `context.md` block yourself after successful direct creation.
+4. Tell the user the workflow is ready — no need to mention the internal retry.
 
 ---
 
@@ -95,7 +111,7 @@ You must capture and hold two artifacts across the lifecycle. These are passed t
 3. Once clear → delegate to `n8n-builder`
 4. After builder returns:
    - **Capture** the `context.md` block (between `CONTEXT_MD_START` / `CONTEXT_MD_END`) and hold it in session
-   - **Verify** the workflow ID exists via `search_workflows` directly. If not found → report the issue and retry
+   - **Verify** the workflow ID exists by calling `get_workflow_details(workflowId)` directly from your own session's n8n MCP. If not found → do not retry the builder; use the orchestrator fallback (direct creation) described in the verification section above
 5. Once verified → tell user: "Your workflow is ready in n8n. Want to test it now?"
 
 ### When user says "test it" / "run a test":

@@ -35,8 +35,37 @@ When the orchestrator delegates, it **must** pass:
 Before writing **any** workflow code:
 
 1. Call `get_sdk_reference(section="patterns")` via your bound n8n MCP prefix.
-2. Use **only** the syntax returned (e.g. functional `workflow()`, `node()`, `trigger()` from `@n8n/workflow-sdk`) — never class-based `WorkflowBuilder` or other patterns from memory or old docs.
+2. Use **only** the syntax returned — never patterns from memory, training data, or old docs.
 3. If `validate_workflow` fails with SDK/syntax errors, call `get_sdk_reference` again and rewrite — do not guess.
+
+### Correct SDK pattern (hard-coded reference — do not deviate)
+
+```javascript
+import { workflow, trigger, node } from '@n8n/workflow-sdk';
+
+const myTrigger = trigger({
+  type: 'n8n-nodes-base.formTrigger',
+  version: 2.2,
+  config: { name: 'My Trigger', position: [240, 300], parameters: { ... } },
+  output: [{ exampleField: 'exampleValue' }]
+});
+
+const myNode = node({
+  type: 'n8n-nodes-base.code',
+  version: 2,
+  config: { name: 'My Node', position: [540, 300], parameters: { ... } },
+  output: [{ result: 'example' }]
+});
+
+export default workflow('kebab-case-id', 'Human Readable Name')
+  .add(myTrigger)
+  .to(myNode);
+```
+
+**INVALID patterns — never use these:**
+- `workflow({ name, nodes, connections })` — old object format, will be rejected
+- Top-level `name:` property on `node()` or `trigger()` — name goes inside `config: { name }`
+- Any `WorkflowBuilder` class-based API
 
 ## Ground Rules
 
@@ -63,6 +92,7 @@ Step 2: Load live SDK (required — do this first)
 Step 3: Discover nodes
 - Call: search_nodes(queries=["<service>"]) for each service involved
 - Call: get_node_types(nodeIds=[...]) to get exact parameter schemas
+- **Node existence check (mandatory):** If get_node_types returns "Unknown Node", "not found", or an empty properties list for any node ID → STOP. Do NOT use that node type in any code. Find a real alternative via search_nodes, or use n8n-nodes-base.code as a fallback. Never assume a node exists based on memory or training data.
 
 Step 4: Build workflow code
 - Use only the SDK patterns from Step 2
@@ -77,8 +107,9 @@ Step 6: Save
 - Call: create_workflow_from_code(code, name, description, projectId="f256nwX37BEaIkA2")
 
 Step 7: Verify and return to orchestrator
-- Call: get_workflow_details(workflowId) on the same MCP prefix
-- Return: workflow name, ID, and what was built
+- Call: get_workflow_details(workflowId) on the same MCP prefix immediately after creation
+- **Hard stop:** If get_workflow_details returns an error, "not found", or any response that does not include the expected nodes → you MUST stop and report failure. Do NOT return the workflowId to the orchestrator. Do NOT claim the workflow was created.
+- Only if get_workflow_details returns the workflow with all expected nodes → return the workflow name, ID, and node list
 - Say: "Workflow saved as draft in n8n. Ready for testing."
 ```
 
