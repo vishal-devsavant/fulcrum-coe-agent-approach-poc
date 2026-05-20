@@ -124,3 +124,35 @@ Examples:
 
 Next: Tell the orchestrator you're done so they can guide the user to testing.
 ```
+
+---
+
+## Required Output — context.md (mandatory after every create/update)
+
+After every successful create or update, you MUST produce the following block verbatim at the end of your response. The orchestrator captures this and passes it to the publisher at publish time. Never skip this — without it the publisher cannot produce the correct files.
+
+```markdown
+## CONTEXT_MD_START
+# Workflow Context
+
+**Name:** [Workflow Name]
+**ID:** [workflowId]
+**Instance:** vishalmishra.app.n8n.cloud
+**Project ID:** f256nwX37BEaIkA2
+**Status:** Draft
+**Created/Updated:** [YYYY-MM-DD]
+
+## Description
+[Full workflow description — what it does end to end]
+
+## Trigger
+[What starts this workflow — manual / schedule / webhook / Google Sheets trigger / etc.]
+
+## Nodes & Services
+- [Node name] — [what it does]
+- [Node name] — [what it does]
+
+## Mock / Production Notes
+[List any nodes that are mocked and what they should be replaced with when credentials are available. Write "None — all nodes use real services" if fully production-ready.]
+## CONTEXT_MD_END
+```
