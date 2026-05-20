@@ -1,0 +1,53 @@
+{
+  "id": "5IApa6fRHNRgwAOu",
+  "name": "Demo - User Details Form - Google Doc (Mock)",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "id": "6f407e61-11c8-444d-8cfa-a1435e00be7c",
+      "name": "User Details Form",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [0, 0],
+      "parameters": {
+        "formTitle": "User Details",
+        "formDescription": "Fill in your details to be saved to the document.",
+        "formFields": {
+          "values": [
+            { "fieldLabel": "Full Name", "fieldType": "text", "requiredField": true },
+            { "fieldLabel": "Email", "fieldType": "email", "requiredField": true },
+            { "fieldLabel": "Department", "fieldType": "text", "requiredField": true },
+            { "fieldLabel": "Role", "fieldType": "text", "requiredField": true }
+          ]
+        },
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "webhookId": "29668a78-b276-4903-b731-8d5da9521009"
+    },
+    {
+      "id": "5d59ae40-e646-457a-ad8a-900e7e08f225",
+      "name": "Save to Google Doc (Mock)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [224, 0],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "language": "javaScript",
+        "jsCode": "var fullName = $input.item.json[\"Full Name\"];\nvar email = $input.item.json[\"Email\"];\nvar department = $input.item.json[\"Department\"];\nvar role = $input.item.json[\"Role\"];\nvar submittedAt = new Date().toISOString();\n$input.item.json.mock = true;\n$input.item.json.documentId = \"mock-doc-id-ABC123\";\n$input.item.json.documentTitle = \"Fulcrum User Register\";\n$input.item.json.appendedContent = \"Name: \" + fullName + \" | Email: \" + email + \" | Department: \" + department + \" | Role: \" + role + \" | Submitted: \" + submittedAt;\n$input.item.json.status = \"success\";\n$input.item.json.message = \"Row for \" + fullName + \" successfully appended to Google Doc (mocked)\";\nreturn $input.item;"
+      }
+    }
+  ],
+  "connections": {
+    "User Details Form": {
+      "main": [
+        [{ "node": "Save to Google Doc (Mock)", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": [],
+  "meta": { "aiBuilderAssisted": true, "builderVariant": "mcp" },
+  "description": "Form collects Full Name, Email, Department, Role. Mock node simulates appending the row to a Google Doc. No credentials needed — swap Code node for real Google Docs node when ready."
+}
