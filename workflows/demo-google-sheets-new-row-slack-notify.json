@@ -1,0 +1,94 @@
+{
+  "id": "KBhUKPySgccoXASr",
+  "name": "Demo - Google Sheets New Row - Slack Notify",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "node-trigger",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// MOCK: Simulates a Google Sheets 'New Row' trigger\n// In production, replace this with the Google Sheets Trigger node\nreturn [\n  {\n    json: {\n      row_number: 42,\n      name: \"Jane Smith\",\n      email: \"jane.smith@example.com\",\n      status: \"New Lead\",\n      created_at: new Date().toISOString()\n    }\n  }\n];"
+      },
+      "id": "node-mock-sheets",
+      "name": "Mock - Google Sheets New Row",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// MOCK: Formats the Slack message payload\n// In production, replace this with the Slack node\nconst row = $input.first().json;\n\nreturn [\n  {\n    json: {\n      channel: \"#leads-notifications\",\n      text: `:new: New row detected in Google Sheets!\\n*Name:* ${row.name}\\n*Email:* ${row.email}\\n*Status:* ${row.status}\\n*Time:* ${row.created_at}`\n    }\n  }\n];"
+      },
+      "id": "node-format-message",
+      "name": "Format Slack Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// MOCK: Simulates sending the Slack notification\n// In production, replace this with the Slack node (Send Message action)\nconst payload = $input.first().json;\n\nconsole.log('MOCK Slack send:', JSON.stringify(payload, null, 2));\n\nreturn [\n  {\n    json: {\n      ok: true,\n      channel: payload.channel,\n      message_sent: payload.text,\n      mock: true,\n      timestamp: new Date().toISOString()\n    }\n  }\n];"
+      },
+      "id": "node-mock-slack",
+      "name": "Mock - Slack Send Notification",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 300]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Mock - Google Sheets New Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mock - Google Sheets New Row": {
+      "main": [
+        [
+          {
+            "node": "Format Slack Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Slack Message": {
+      "main": [
+        [
+          {
+            "node": "Mock - Slack Send Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": [
+    {
+      "name": "demo"
+    },
+    {
+      "name": "mock"
+    }
+  ],
+  "meta": {
+    "instanceId": "vishalmishra.app.n8n.cloud"
+  }
+}
